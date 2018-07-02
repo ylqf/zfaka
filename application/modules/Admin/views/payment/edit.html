@@ -22,6 +22,8 @@
                                 <input type="text" id="app_id" name="app_id" required lay-verify="required" autocomplete="off" value="<?php echo $item['app_id'];?>" class="layui-input">
                             </div>
                         </div>
+						
+						<?php if($item['alias']=='zfbf2f'):?>
                         <div class="layui-form-item layui-form-text">
                             <label for="ali_public_key" class="layui-form-label">ali_public_key</label>
                             <div class="layui-input-block">
@@ -44,13 +46,19 @@
                                 </select>
                             </div>
                         </div>
+						<?php else:?>
+                        <div class="layui-form-item">
+                            <label for="app_secret" class="layui-form-label">密钥</label>
+                            <div class="layui-input-inline">
+								<input type="text" id="app_secret" name="app_secret" required lay-verify="required" autocomplete="off" value="<?php echo $item['app_secret'];?>" class="layui-input">
+                            </div>
+                        </div>
+						<?php endif;?>
                         <div class="layui-form-item">
                             <label class="layui-form-label">是否激活</label>
                             <div class="layui-input-inline">
-                                <input type="radio" name="active" value="1" title="激活" <?php if($item[ 'active']=='1' ):?>checked=""
-                                <?php endif;?>>
-                                <input type="radio" name="active" value="0" title="取消" <?php if($item[ 'active']=='0' ):?>checked=""
-                                <?php endif;?>>
+                                <input type="radio" name="active" value="1" title="激活" <?php if($item[ 'active']=='1' ):?>checked=""<?php endif;?>>
+                                <input type="radio" name="active" value="0" title="取消" <?php if($item[ 'active']=='0' ):?>checked=""<?php endif;?>>
                             </div>
                         </div>
                         <div class="layui-form-item">

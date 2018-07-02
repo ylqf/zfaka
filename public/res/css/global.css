@@ -583,3 +583,17 @@ body .fly-user-main{position: relative; min-height: 600px;}
   .site-mobile .fly-user-main>.layui-nav{left: 0;}
   .site-mobile .site-mobile-shade{content: ''; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,.9); z-index: 999;}
 }
+
+@media screen and (max-width: 450px){
+	.layui-form-item .query_yzm {position: absolute;right: 0;top: 1px;cursor: pointer;}
+	.layui-table-querey{overflow-y: auto;}
+}
+.orderpaymethod img{width: 100%;max-width: 150px;border: 1px solid #EAEAEA;cursor: pointer;}
+.mod-title {height: 60px;line-height: 60px;text-align: center;border-bottom: 1px solid #ddd;background: #fff}
+.ico_log {display: inline-block;width: 130px;height: 38px;vertical-align: middle;margin-right: 7px}
+.ico-codepayalipay,.ico-zfbf2f{background: url("/res/images/pay/alipay.jpg") no-repeat;}
+.ico-codepayqq {background: url("/res/images/pay/qqpay.jpg") no-repeat;}
+.ico-codepaywx {background: url("/res/images/pay/weixin.jpg") no-repeat;}
+.mod-title .text {font-size: 20px;color: #333;font-weight: normal;vertical-align: middle}
+.mod-content{text-align: center;}
+.mod-content img{margin-left: 20px;margin-right: 20px;}

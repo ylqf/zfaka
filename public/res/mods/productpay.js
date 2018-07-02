@@ -4,7 +4,7 @@
 	var oid = $("#oid").val();
 	var t = '';
 
-	$('.layui-btn').on('click', function(event) {
+	$('.orderpaymethod').on('click', function(event) {
 		event.preventDefault();
 		var paymethod = $(this).attr("data-type");
         $.ajax({
@@ -14,15 +14,16 @@
             data: { "csrf_token": TOKEN,'paymethod':paymethod,'oid':oid },
             success: function(res) {
                 if (res.code == 1) {
+					var html = '<h1 class="mod-title"><span class="ico_log ico-'+paymethod+'"></span></h1><div class="mod-content" style="text-align: center;"><img src="'+res.data.qr+'" alt="'+res.data.payname+'" width="230" height="230"><p>请使用手机'+res.data.payname+'扫一扫</p><p>扫描二维码完成支付</p></div>';
 					layer.open({
 						type: 1
 						,title: false
 						,offset: 'auto'
 						,id: 'layerDemoauto' //防止重复弹出
-						,content: '<div style="text-align: center;"><img src="/product/order/showqr/?url='+res.data+'" alt="当面付" width="230" height="230"><p>请使用手机支付宝扫一扫</p><p>扫描二维码完成支付</p></div>'
+						,content: html
 						,btn: '关闭'
 						,btnAlign: 'c' //按钮居中
-						,shade: 0 //不显示遮罩
+						,shade: 0.8 //不显示遮罩
 						,yes: function(){
 							layer.closeAll();
 						}

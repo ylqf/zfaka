@@ -5,8 +5,9 @@
         <div class="layui-tab layui-tab-brief" lay-filter="email">
             <ul class="layui-tab-title" id="LAY_mine">
                 <li class="" lay-id="info"><a href="/admin/order/">订单管理</a></li>
-                <li class="layui-this" lay-id="info">查看</a>
-                </li>
+                <li class="layui-this" lay-id="info">查看</li>
+				<?php if($order[ 'status']=='0' ):?><li><a href="/admin/order/pay/?id=<?php echo $order['id'];?>">确认付款</a></li><?php endif;?>
+				<?php if($order[ 'status']=='1' OR  $order[ 'status']=='3'):?><li><a href="/admin/order/send/?id=<?php echo $order['id'];?>">手工发货</a></li><?php endif;?>
             </ul>
             <div class="layui-tab-content" style="padding: 20px 0;">
                 <div class="layui-form-pane layui-tab-item layui-show">
@@ -54,9 +55,15 @@
                             </div>
                         </div>
                         <div class="layui-form-item">
+                            <label for="paymethod" class="layui-form-label">支付渠道</label>
+                            <div class="layui-input-inline">
+                                <input type="text" id="paymethod" name="paymethod" disabled autocomplete="off" value="<?php echo $order['paymethod'];?>" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
                             <label for="paytime" class="layui-form-label">支付时间</label>
                             <div class="layui-input-inline">
-                                <input type="text" id="paytime" name="paytime" disabled autocomplete="off" value="<?php echo date('Y-m-d H:i:s',$order['paytime']);?>" class="layui-input">
+                                <input type="text" id="paytime" name="paytime" disabled autocomplete="off" value="<?php echo $order['paytime']>0?date('Y-m-d H:i:s',$order['paytime']):'';?>" class="layui-input">
                             </div>
                         </div>
                         <div class="layui-form-item">
@@ -68,14 +75,10 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">状态</label>
                             <div class="layui-input-block">
-                                <input type="radio" name="status" value="0" title="待支付" <?php if($order[ 'status']=='0' ):?>checked=""
-                                <?php endif;?>>
-                                <input type="radio" name="status" value="1" title="待处理" <?php if($order[ 'status']=='1' ):?>checked=""
-                                <?php endif;?>>
-                                <input type="radio" name="status" value="2" title="已完成" <?php if($order[ 'status']=='2' ):?>checked=""
-                                <?php endif;?>>
-                                <input type="radio" name="status" value="3" title="处理失败" <?php if($order[ 'status']=='3' ):?>checked=""
-                                <?php endif;?>>
+                                <input type="radio" name="status" value="0" title="待支付" <?php if($order[ 'status']=='0' ):?>checked=""<?php endif;?>>
+                                <input type="radio" name="status" value="1" title="待处理" <?php if($order[ 'status']=='1' ):?>checked=""<?php endif;?>>
+                                <input type="radio" name="status" value="2" title="已完成" <?php if($order[ 'status']=='2' ):?>checked=""<?php endif;?>>
+                                <input type="radio" name="status" value="3" title="处理失败" <?php if($order[ 'status']=='3' ):?>checked=""<?php endif;?>>
                             </div>
                         </div>
                         <div class="layui-form-item">
@@ -88,9 +91,7 @@
                         <div class="layui-form-item layui-form-text">
                             <label for="cardmi" class="layui-form-label">卡密</label>
                             <div class="layui-input-block">
-                                <textarea placeholder="" id="cardmi" name="cardmi" disabled autocomplete="off" class="layui-textarea" style="height: 80px;">
-                                    <?php echo $order['kami'];?>
-                                </textarea>
+                                <textarea placeholder="" id="cardmi" name="cardmi" disabled autocomplete="off" class="layui-textarea" style="height: 80px;"><?php echo $order['kami'];?></textarea>
                             </div>
                         </div>
                         <?php endif;?>
@@ -103,5 +104,5 @@
 <!--引入公共底文件-->
 <?php include ADMIN_COMMON_PATH.'/footer.html';?>
 <script>
-layui.use('adminproducts');
+layui.use('adminorder');
 </script>

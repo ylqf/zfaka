@@ -25,8 +25,8 @@ class OrderController extends PcBasicController
     public function buyAction()
     {
 		//下订单
-		$pid = $this->getPost('productlist');
-		$number = $this->getPost('number');
+		$pid = ceil($this->getPost('productlist'));
+		$number = ceil($this->getPost('number'));
 		$email = $this->getPost('email');
 		$chapwd = $this->getPost('chapwd');
 		$csrf_token = $this->getPost('csrf_token', false);
@@ -46,10 +46,12 @@ class OrderController extends PcBasicController
 						$data = array('code' => 1004, 'msg' => '库存不足');
 						Helper::response($data);
 					}
-						
+					
+					$starttime = strtotime(date("Y-m-d"));
+					$endtime = strtotime(date("Y-m-d 23:59:59"));
 					//进行同一ip，下单未付款的处理判断
 					if(isset($this->config['limit_ip_order']) AND $this->config['limit_ip_order']>0){
-						$total = $this->m_order->Where(array('ip'=>$myip,'status'=>0))->Total();
+						$total = $this->m_order->Where(array('ip'=>$myip,'status'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 						if($total>$this->config['limit_ip_order']){
 							$data = array('code' => 1005, 'msg' => '处理失败,您有太多未付款订单了');
 							Helper::response($data);
@@ -58,7 +60,7 @@ class OrderController extends PcBasicController
 
 					//进行同一email，下单未付款的处理判断
 					if(isset($this->config['limit_email_order']) AND $this->config['limit_email_order']>0){
-						$total = $this->m_order->Where(array('email'=>$email,'status'=>0))->Total();
+						$total = $this->m_order->Where(array('email'=>$email,'status'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 						if($total>$this->config['limit_email_order']){
 							$data = array('code' => 1006, 'msg' => '处理失败,您有太多未付款订单了');
 							Helper::response($data);
@@ -66,7 +68,7 @@ class OrderController extends PcBasicController
 					}
 					
 					//进行同一商品，禁止重复下单的判断
-					$total = $this->m_order->Where(array('email'=>$email,'status'=>0,'pid'=>$pid))->Total();
+					$total = $this->m_order->Where(array('email'=>$email,'status'=>0,'pid'=>$pid))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 					if($total>0){
 						$data = array('code' => 1007, 'msg' => '处理失败,商品限制重复下单,请直接查询订单进行支付');
 						Helper::response($data);
@@ -103,8 +105,12 @@ class OrderController extends PcBasicController
 						'addtime'=>time(),
 					);
 					$id=$this->m_order->Insert($m);
-					$oid = base64_encode($id);
-					$data = array('code' => 1, 'msg' => '下单成功','data'=>array('oid'=>$oid));
+					if($id>0){
+						$oid = base64_encode($id);
+						$data = array('code' => 1, 'msg' => '下单成功','data'=>array('oid'=>$oid));	
+					}else{
+						$data = array('code' => 1003, 'msg' => '订单异常');
+					}
 				}else{
 					$data = array('code' => 1002, 'msg' => '商品不存在');
 				}
@@ -123,7 +129,7 @@ class OrderController extends PcBasicController
 		$oid = $this->get('oid',false);
 		$oid = (int)base64_decode($oid);
 		if(is_numeric($oid) AND $oid>0){
-			$order = $this->m_order->Where(array('id'=>$oid,'status'=>0))->SelectOne();
+			$order = $this->m_order->Where(array('id'=>$oid))->SelectOne();
 			if(!empty($order)){
 				//获取支付方式
 				$payments = $this->m_payment->getConfig();
@@ -132,7 +138,7 @@ class OrderController extends PcBasicController
 				$data['code']=1;
 			}else{
 				$data['code']=1002;
-				$data['msg']='订单不存在/订单已支付';
+				$data['msg']='订单不存在';
 			}
 		}else{
 			$data['code']=1001;
@@ -158,9 +164,14 @@ class OrderController extends PcBasicController
 						if($order['status']>0){
 							$data = array('code' => 1004, 'msg' => '订单已支付成功');
 						}else{
-							$zfbf2f = new \Pay\zfbf2f();
-							$params =array('orderid'=>$order['orderid'],'money'=>$order['money'],'productname'=>$order['productname'],'web_url'=>$this->config['web_url']);
-							$data = $zfbf2f->pay($payconfig,$params);
+							try{
+								$payclass = "\\Pay\\".$paymethod."\\".$paymethod;
+								$PAY = new $payclass();
+								$params =array('orderid'=>$order['orderid'],'money'=>$order['money'],'productname'=>$order['productname'],'web_url'=>$this->config['web_url']);
+								$data = $PAY->pay($payconfig,$params);
+							} catch (\Exception $e) {
+								$data = array('code' => 1005, 'msg' => $e->errorMessage());
+							}
 						}
 					}else{
 						$data = array('code' => 1003, 'msg' => '订单不存在');
@@ -181,11 +192,12 @@ class OrderController extends PcBasicController
 	public function showqrAction()
 	{
 		$url = $this->get('url');
-		if($url AND filter_var($url, FILTER_VALIDATE_URL)){
+		if($url){
 			\PHPQRCode\QRcode::png($url);
 			exit();
 		}else{
 			echo '';
+			exit();
 		}
 	}
 }

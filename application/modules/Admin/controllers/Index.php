@@ -20,9 +20,17 @@ class IndexController extends AdminBasicController
 			if ($this->AdminUser==FALSE AND empty($this->AdminUser)) {
 				$this->redirect("/admin/login");
 				return FALSE;
+			}else{
+				$version = @file_get_contents(INSTALL_LOCK);
+				$version = strlen(trim($version))>0?$version:'1.0.0';
+				if(version_compare(trim($version), trim(VERSION), '<' )){
+					$this->redirect("/install/upgrade");
+					return FALSE;
+				}else{
+					$data = array();
+					$this->getView()->assign($data);
+				}
 			}
-			$data = array();
-			$this->getView()->assign($data);
 		}else{
 			$this->redirect("/install/");
 			return FALSE;

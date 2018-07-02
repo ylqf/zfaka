@@ -1,0 +1,35 @@
+<?php include COMMON_PATH.'/header_install.html';?>
+	<div class="layui-container fly-marginTop fly-user-main">
+		<div class="layui-row layui-col-space15">
+			<div class="layui-card" style="color:#000000;">
+			  <div class="layui-card-header">系统升级</div>
+			  <div class="layui-card-body">
+				<div class="layui-form-pane layui-tab-item layui-show">
+					<blockquote class="layui-elem-quote layui-text">
+						<p>为防止升级失败,升级前,请自行备份好数据库!</p>
+					</blockquote>
+					
+					<fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
+					  <legend>本次更新内容：</legend>
+					</fieldset>
+					<blockquote class="layui-elem-quote layui-quote-nm">
+						<?php echo $upgrade_desc;?>
+					</blockquote>
+					
+					<pre class="layui-code layui-box layui-code-view"><?php echo $upgrade_sql;?></pre>
+					<form class="layui-form" method="post">
+					<p style="margin-bottom: 0;text-align:center">
+						<input type="hidden" name="method" value="upgrade">
+						<button class="layui-btn" key="set-mine" lay-filter="upgrade_button" lay-submit>立即升级</button>
+                    </p>
+					</form>
+				</div>
+			  </div>
+			</div>
+		</div>
+	</div>
+<!--引入公共底文件-->
+<?php include COMMON_PATH.'/footer.html';?>
+<script>
+    layui.use('install');
+</script>
