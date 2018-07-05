@@ -52,7 +52,9 @@ class SettingController extends AdminBasicController
             }
 			
             $limits = "{$pagenum},{$limit}";
-			$items=$this->m_config->Where($where)->Limit($limits)->Order(array('id'=>'DESC'))->Select();
+			//$field = array('id','name','updatetime','tag');
+			$field = array();
+			$items=$this->m_config->Field($field)->Where($where)->Limit($limits)->Order(array('id'=>'DESC'))->Select();
 			
             if (empty($items)) {
                 $data = array('code'=>1002,'count'=>0,'data'=>array(),'msg'=>'无数据');
@@ -102,7 +104,7 @@ class SettingController extends AdminBasicController
 			if ($this->VerifyCsrfToken($csrf_token)) {
 				$m=array(
 					'name'=>$name,
-					'value'=>$value,
+					'value'=>htmlspecialchars($value),
 					'tag'=>$tag,
 				);
 				if($method == 'edit' AND $id>0){

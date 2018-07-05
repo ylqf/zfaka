@@ -9,6 +9,38 @@
             <div class="layui-tab-content" style="padding: 20px 0;">
                 <div class="layui-form layui-form-pane layui-tab-item layui-show">
                     <div class="layui-form-item layui-show">
+						<div class="layui-form layui-row layui-col-space10">
+							<div class="layui-inline layui-col-xs12 layui-col-sm4 layui-col-md3 layui-col-lg2">
+								<input type="text" name="orderid" class="layui-input" value="" placeholder="订单号" />
+							</div>
+							<div class="layui-inline layui-col-xs12 layui-col-sm4 layui-col-md3 layui-col-lg2">
+								<input type="text" name="email" class="layui-input" value="" placeholder="邮箱" />
+							</div>
+							<div class="layui-col-xs12 layui-col-sm4 layui-col-md3 layui-col-lg2">
+								<select name="pid">
+									<option value="0" >筛选商品</option>
+                                    <?php if(!empty($products)):?>
+                                    <?php foreach($products AS $p):?>
+                                    <option value="<?php echo $p['id'];?>"><?php echo $p['name'];?></option>
+                                    <?php endforeach;?>
+                                    <?php endif;?>
+								</select>
+							</div>
+							<div class="layui-col-xs12 layui-col-sm4 layui-col-md3 layui-col-lg2">
+								<select name="status">
+									<option value="-1" >筛选状态</option>
+									<option value="0">待付款</option>
+									<option value="1">待处理</option>
+									<option value="2">已完成</option>
+									<option value="3">处理失败</option>
+								</select>
+							</div>
+
+							<div class="layui-inline layui-col-xs12 layui-col-sm4 layui-col-md3 layui-col-lg2">
+								<button lay-submit class="layui-btn" lay-filter="search">查询</button>
+							</div>
+						</div>
+
                         <table class="layui-table" id="table" lay-filter="table"></table>
                     </div>
                 </div>
@@ -36,16 +68,17 @@
                 </script>
                 <script type="text/html" id="status">
                     {{# if(d.status =='0'){ }}
-                    <span class="layui-badge layui-bg-gray">待付款</span> {{# }else if(d.status =="1"){ }}
-                    <span class="layui-badge layui-bg-blue">待处理</span> {{# }else if(d.status =="2"){ }}
-                    <span class="layui-badge layui-bg-green">已完成</span> {{# } else { }}
+                    <span class="layui-badge layui-bg-gray">待付款</span>
+					{{# }else if(d.status =="1"){ }}
+                    <span class="layui-badge layui-bg-blue">待处理</span>
+					{{# }else if(d.status =="2"){ }}
+                    <span class="layui-badge layui-bg-green">已完成</span>
+					{{# } else { }}
                     <span class="layui-badge layui-bg-black">处理失败</span> {{# } }}
                 </script>
                 <script type="text/html" id="opt">
-                    {{# if(d.status >0){ }}
-                    <a class="layui-btn layui-btn-warm layui-btn-xs" href="/admin/order/view/?id={{d.id}}">查看</a> 
-					{{# } else { }}
-                    <a class="layui-btn layui-btn-warm layui-btn-xs" href="/admin/order/view/?id={{d.id}}">查看</a>
+					<a class="layui-btn layui-btn-warm layui-btn-xs" href="/admin/order/view/?id={{d.id}}">查看</a> 
+                    {{# if(d.status =='0' || d.status =='2'){ }}
 					<a data-href="/admin/order/delete/?id={{d.id}}" class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
 					{{# } }}
                 </script>

@@ -55,46 +55,48 @@ layui.define(['layer', 'table', 'form','upload'], function(exports){
 		});
 		return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
 	});
-
-	table.on('tool(productscard)', function(obj){
-		var data = obj.data; //获得当前行数据
-		var layEvent = obj.event; //获得 lay-event 对应的值
-		var tr = obj.tr; //获得当前行 tr 的DOM对象
-
-		if (layEvent === 'del') { //删除
-			// layer.confirm('真的删除行么', function(index) {
-			// 	obj.del(); //删除对应行（tr）的DOM结构，并更新缓存
-			// 	layer.close(index);
-			// 	//向服务端发送删除指令
-			// });
-			$.ajax({
-	            type: "POST",
-	            dataType: "json",
-	            url: "/admin/productscard/deleteajax",
-	            data: { "csrf_token": TOKEN,'cardid':data.id},
-	            success: function(res) {
-	                if (res.code == 1) {
-						layer.open({
-							title: '提示',
-							content: '删除成功',
-							btn: ['确定'],
-							yes: function(index, layero){
-								location.reload();
-							},
-							cancel: function(){
-								location.reload();
-							}
-						});
-	                } else {
-						layer.msg(res.msg,{icon:2,time:5000});
-	                }
-	                return;
-	            }
-	        });
-		}
+	
+	//导出
+	form.on('submit(download)', function(data){
+		data.field.csrf_token = TOKEN;
+		var i = layer.load(2,{shade: [0.5,'#fff']});
+		/*
+		$.ajax({
+			url: '/admin/productscard/downloadajax',
+			type: 'POST',
+			dataType: 'json',
+			data: data.field,
+		})
+		.done(function(res) {
+			if (res.code == '1') {
+				layer.open({
+					title: '提示',
+					content: '导入成功',
+					btn: ['确定'],
+					yes: function(index, layero){
+					    location.reload();
+					},
+					cancel: function(){
+					    location.reload();
+					}
+				});
+			} else {
+				layer.msg(res.msg,{icon:2,time:5000});
+			}
+		})
+		.fail(function() {
+			layer.msg('服务器连接失败，请联系管理员',{icon:2,time:5000});
+		})
+		.always(function() {
+			layer.close(i);
+		});
+		return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。*/
+		$('#download_form').submit();
+		layer.close(i);
 	});
+
 	table.render({
-		elem: '#productscard',
+		elem: '#table',
 		url: '/admin/productscard/ajax',
 		page: true,
 		cellMinWidth:60,
@@ -146,5 +148,12 @@ layui.define(['layer', 'table', 'form','upload'], function(exports){
 		return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
 	});
 
+    form.on('submit(search)', function(data){
+        table.reload('table', {
+            url: '/admin/productscard/ajax',
+            where: data.field
+        });
+        return false;
+    });
 	exports('adminproductscard',null)
 });

@@ -23,7 +23,7 @@ class codepayqq
 			"pay_id" => $params['orderid'], //可以是用户ID,站内商户订单号,用户名
 			"param" => '',//自定义参数
 			"act" => 0,//此参数即将弃用
-			"outTime" => 360,//二维码超时设置
+			"outTime" => $payconfig['overtime'],//二维码超时设置
 			"page" => 4,//订单创建返回JS 或者JSON
 			"return_url" => $params['web_url'] . '/product/query/?paymethod='.$this->paymethod.'&orderid='.$params['orderid'],
 			"notify_url" => $params['web_url'] . '/product/notify/?paymethod='.$this->paymethod,
@@ -49,11 +49,18 @@ class codepayqq
 				$codepay_json = curl_exec($ch);
 				curl_close($ch);
 			}
-			$codepay_data = json_decode($codepay_json);
-			$qr = $codepay_data ? $codepay_data->qrcode : '';
-			
-			$result = array('paymethod'=>$this->paymethod,'qr'=>$qr,'payname'=>$payconfig['name']);
-			return array('code'=>1,'msg'=>'success','data'=>$result);
+			$codepay_data = json_decode($codepay_json,true);
+			if(is_array($codepay_data)){
+				if($codepay_data['status']<0){
+					return array('code'=>1002,'msg'=>$codepay_data['msg'],'data'=>'');
+				}else{
+					$qr = $codepay_data ? $codepay_data['qrcode'] : '';
+					$result = array('paymethod'=>$this->paymethod,'qr'=>$qr,'payname'=>$payconfig['name'],'overtime'=>$payconfig['overtime']);
+					return array('code'=>1,'msg'=>'success','data'=>$result);
+				}
+			}else{
+				return array('code'=>1001,'msg'=>"支付接口请求失败",'data'=>'');
+			}
 		} catch (PayException $e) {
 			return array('code'=>1000,'msg'=>$e->errorMessage(),'data'=>'');
 		}

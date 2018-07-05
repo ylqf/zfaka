@@ -81,7 +81,10 @@ INSERT INTO `t_config` (`id`, `catid`, `name`, `value`, `tag`, `lock`, `updateti
 (4, 1, 'web_url', 'http://faka.zlkb.net', '当前网站地址,用于支付站点异步返回，务必修改正确', 1, 1453452674),
 (5, 1, 'admin_email', '43036456@qq.com', '管理员邮箱,用于接收邮件提醒用', 1, 1453452674),
 (6, 1, 'web_name', 'ZFAKA平台', '当前站点名称', 1, 1453452674),
-(7, 1, 'web_description', '本系统由资料空白开发', '当前站点描述', 1, 0);
+(7, 1, 'web_description', '本系统由资料空白开发', '当前站点描述', 1, 1453452674),
+(8, 0, 'notice', '本系统商品均可正常购买。开源下载地址：github地址:&lt;a href=&quot;https://github.com/zlkbdotnet/zfaka/&quot; target=&quot;_blank&quot;&gt;https://github.com/zlkbdotnet/zfaka/&lt;/a&gt;', '首页公告', 1, 1453452674),
+(9, 1, 'ad', '&lt;image src=&quot;/res/images/pay/supportme.jpg&quot;&gt;', '购买页默认内容', 1, 1453452674);
+
 
 -- --------------------------------------------------------
 
@@ -201,7 +204,8 @@ CREATE TABLE IF NOT EXISTS `t_order` (
   `tradeid` varchar(255) NOT NULL DEFAULT '' COMMENT '外部订单id',
   `paymethod` varchar(255) NOT NULL DEFAULT '' COMMENT '支付渠道',
   `paymoney` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '支付总金额',
-  `kami` text COMMENT '卡密'
+  `kami` text COMMENT '卡密',
+  `isdelete` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未删除,1已删除'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -221,8 +225,7 @@ CREATE TABLE IF NOT EXISTS `t_payment` (
   `app_secret` varchar(255) NOT NULL DEFAULT '',
   `ali_public_key` text,
   `rsa_private_key` text,
-  `notify_url` varchar(255) NOT NULL DEFAULT '',
-  `return_url` varchar(255) NOT NULL DEFAULT '',
+  `overtime` int(11) NOT NULL DEFAULT '0' COMMENT '支付超时,0是不限制',
   `active` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未激活,1已激活'
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 
@@ -230,11 +233,11 @@ CREATE TABLE IF NOT EXISTS `t_payment` (
 -- 转存表中的数据 `t_payment`
 --
 
-INSERT INTO `t_payment` (`id`, `payment`, `payname`, `payimage`, `alias`, `sign_type`, `app_id`, `app_secret`, `ali_public_key`, `rsa_private_key`, `active`) VALUES
-(1, '支付宝当面付', '支付宝', '/res/images/pay/alipay.jpg', 'zfbf2f', 'RSA2', '', '', '', '', 0),
-(2, '码支付-支付宝扫码支付', '支付宝', '/res/images/pay/alipay.jpg', 'codepayalipay', 'RSA2', '', '', '', '',  0),
-(3, '码支付-QQ扫码支付', '手机QQ', '/res/images/pay/qqpay.jpg', 'codepayqq', 'RSA2', '', '', '', '', 0),
-(4, '码支付-微信扫码支付', '微信', '/res/images/pay/weixin.jpg', 'codepaywx', 'RSA2', '', '', '', '', 0);
+INSERT INTO `t_payment` (`id`, `payment`, `payname`, `payimage`, `alias`, `sign_type`, `app_id`, `app_secret`, `ali_public_key`, `rsa_private_key`,`overtime`, `active`) VALUES
+(1, '支付宝当面付', '支付宝', '/res/images/pay/alipay.jpg', 'zfbf2f', 'RSA2', '', '', '', '',0, 0),
+(2, '码支付-支付宝扫码支付', '支付宝', '/res/images/pay/alipay.jpg', 'codepayalipay', 'RSA2', '', '', '', '', 300, 0),
+(3, '码支付-QQ扫码支付', '手机QQ', '/res/images/pay/qqpay.jpg', 'codepayqq', 'RSA2', '', '', '', '',300, 0),
+(4, '码支付-微信扫码支付', '微信', '/res/images/pay/weixin.jpg', 'codepaywx', 'RSA2', '', '', '', '',300, 0);
 
 -- --------------------------------------------------------
 
@@ -253,15 +256,16 @@ CREATE TABLE IF NOT EXISTS `t_products` (
   `price` decimal(10,2) NOT NULL DEFAULT '0.00',
   `auto` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0手动,1自动',
   `sort_num` int(11) NOT NULL DEFAULT '1' COMMENT '排序',
-  `addtime` int(11) NOT NULL DEFAULT '0' COMMENT '添加时间'
+  `addtime` int(11) NOT NULL DEFAULT '0' COMMENT '添加时间',
+  `isdelete` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未删除,1已删除'
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 
 --
 -- 转存表中的数据 `t_products`
 --
 
-INSERT INTO `t_products` (`id`, `typeid`, `active`, `name`, `description`, `stockcontrol`, `qty`, `price`, `auto`, `sort_num`, `addtime`) VALUES
-(1, 1, 1, '测试商品', '测试使用', 0, 0, '0.10', 1, 99, 1528962221);
+INSERT INTO `t_products` (`id`, `typeid`, `active`, `name`, `description`, `stockcontrol`, `qty`, `price`, `auto`, `sort_num`, `addtime`,`isdelete`) VALUES
+(1, 1, 1, '测试商品', '测试使用', 0, 0, '0.10', 1, 99, 1528962221,0);
 
 -- --------------------------------------------------------
 
@@ -274,15 +278,16 @@ CREATE TABLE IF NOT EXISTS `t_products_card` (
   `pid` int(11) NOT NULL DEFAULT '0' COMMENT '商品id',
   `card` text COMMENT '卡密',
   `addtime` int(11) NOT NULL DEFAULT '0' COMMENT '添加时间',
-  `active` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0可用 1已使用'
+  `active` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0可用 1已使用',
+  `isdelete` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未删除,1已删除'
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 
 --
 -- 转存表中的数据 `t_products_card`
 --
 
-INSERT INTO `t_products_card` (`id`, `pid`, `card`, `addtime`, `active`) VALUES
-(1, 1, '资料空白是大帅锅', 1530082076, 0);
+INSERT INTO `t_products_card` (`id`, `pid`, `card`, `addtime`, `active`,`isdelete`) VALUES
+(1, 1, '资料空白是大帅锅', 1530082076, 0,0);
 
 -- --------------------------------------------------------
 
@@ -294,15 +299,16 @@ CREATE TABLE IF NOT EXISTS `t_products_type` (
   `id` int(11) NOT NULL,
   `name` varchar(55) NOT NULL DEFAULT '' COMMENT '类型命名',
   `sort_num` int(11) NOT NULL DEFAULT '1' COMMENT '排序',
-  `active` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未激活,1已激活'
+  `active` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未激活,1已激活',
+  `isdelete` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0未删除,1已删除'
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 
 --
 -- 转存表中的数据 `t_products_type`
 --
 
-INSERT INTO `t_products_type` (`id`, `name`, `sort_num`, `active`) VALUES
-(1, '测试商品', 1, 1);
+INSERT INTO `t_products_type` (`id`, `name`, `sort_num`, `active`,`isdelete`) VALUES
+(1, '测试商品', 1, 1,0);
 
 -- --------------------------------------------------------
 

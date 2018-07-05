@@ -3,6 +3,15 @@
 	var layer = layui.layer;
 	var form = layui.form;
 
+    function htmlspecialchars_decode(str){
+		str = str.replace(/&amp;/g, '&');
+        str = str.replace(/&lt;/g, '<');
+		str = str.replace(/&gt;/g, '>');
+		str = str.replace(/&quot;/g, '"');
+        str = str.replace(/&#039;/g, "'");
+        return str;  
+    }
+	
 	form.on('select(typeid)', function(data){
 		if (data.value == 0) return;
 		$.ajax({
@@ -24,6 +33,7 @@
 					$('#qty').val('');
 					$('#prodcut_description').html('');
 					$("#buy").attr("disabled","true");
+					autoHeight();
 					form.render('select');
 				} else {
 					$("#buy").attr("disabled","true");
@@ -63,13 +73,14 @@
 					}
 					
 					if(product.auto>0){
-						var str = '<span class="layui-badge layui-bg-green">自动发货</span>';
+						var str = '<p><span class="layui-badge layui-bg-green">自动发货</span></p>';
 					}else{
-						var str = '<span class="layui-badge layui-bg-black">手工发货</span>';
+						var str = '<p><span class="layui-badge layui-bg-black">手工发货</span></p>';
 					}
 					
-					html = str + product.description;
+					html = str + htmlspecialchars_decode(product.description);
 					$('#prodcut_description').html(html);
+					autoHeight();
 					form.render();
 				} else {
 					layer.msg(res.msg,{icon:2,time:5000});
@@ -111,12 +122,16 @@
 	});
 
 	//左右框高度
-	var leftHeight = parseInt($('#prodcut_num').height());
-	var rightHeight = parseInt($('#prodcut_description').height());
-	if (leftHeight > rightHeight) {
-		$('#prodcut_description').height(leftHeight);
-	} else {
-		$('#prodcut_num').height(rightHeight);
+	function autoHeight(){
+		var leftHeight = parseInt($('#prodcut_num').height());
+		var rightHeight = parseInt($('#prodcut_description').height());
+		if (leftHeight > rightHeight) {
+			$('#prodcut_description').height(leftHeight);
+		} else {
+			$('#prodcut_num').height(rightHeight);
+		}
 	}
+
+	autoHeight();
 	exports('product',null)
 });

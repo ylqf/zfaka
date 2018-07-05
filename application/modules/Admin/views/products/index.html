@@ -10,7 +10,11 @@
             <div class="layui-tab-content" style="padding: 20px 0;">
                 <div class="layui-form layui-form-pane layui-tab-item layui-show">
                     <div class="layui-form-item layui-show">
-                        <table class="layui-table" id="products"></table>
+                    <blockquote class="layui-elem-quote">
+                        <p> 注意事项： </p>
+                        <p> 商品删除前，请提前将对应卡密删除或者导出，否则无法删除;</p>
+                    </blockquote>
+                        <table class="layui-table" id="table" lay-filter="table"></table>
                     </div>
                 </div>
             </div>
@@ -40,6 +44,9 @@
 </script>
 <script type="text/html" id="opt">
     <a class="layui-btn layui-btn-warm layui-btn-xs" href="/admin/products/edit/?id={{d.id}}">编辑</a>
+	{{# if(d.active == 0){ }}
+	<a data-href="/admin/products/delete/?id={{d.id}}" class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+	 {{# } }}
 </script>
 <!--引入公共底文件-->
 <?php include ADMIN_COMMON_PATH.'/footer.html';?>

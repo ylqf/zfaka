@@ -9,13 +9,13 @@
 class OrderController extends AdminBasicController
 {
 	private $m_order;
-	private $m_products_card;
+	private $m_products;
 	private $m_email_queue;
     public function init()
     {
         parent::init();
 		$this->m_order = $this->load('order');
-		$this->m_products_card = $this->load('products_card');
+		$this->m_products = $this->load('products');
 		$this->m_email_queue = $this->load('email_queue');
     }
 
@@ -25,8 +25,9 @@ class OrderController extends AdminBasicController
             $this->redirect("/admin/login");
             return FALSE;
         }
-
 		$data = array();
+		$products=$this->m_products->Where(array('isdelete'=>0))->Order(array('id'=>'DESC'))->Select();
+		$data['products'] = $products;
 		$this->getView()->assign($data);
     }
 
@@ -38,7 +39,21 @@ class OrderController extends AdminBasicController
 			Helper::response($data);
         }
 		
-		$where = 'status>-1';
+		$where1 = array('isdelete'=>0);
+		
+		$orderid = $this->get('orderid');
+		$email = $this->get('email',false);
+		$status = $this->get('status');
+		$pid = $this->get('pid');
+		
+        //查询条件
+        $get_params = [
+            'orderid' => $orderid,
+            'email' => $email,
+			'status' => $status,
+			'pid' => $pid,
+        ];   
+        $where = $this->conditionSQL($get_params);
 		
 		$page = $this->get('page');
 		$page = is_numeric($page) ? $page : 1;
@@ -46,7 +61,7 @@ class OrderController extends AdminBasicController
 		$limit = $this->get('limit');
 		$limit = is_numeric($limit) ? $limit : 10;
 		
-		$total=$this->m_order->Where($where)->Total();
+		$total=$this->m_order->Where($where1)->Where($where)->Total();
 		
         if ($total > 0) {
             if ($page > 0 && $page < (ceil($total / $limit) + 1)) {
@@ -56,7 +71,7 @@ class OrderController extends AdminBasicController
             }
 			
             $limits = "{$pagenum},{$limit}";
-			$items=$this->m_order->Where($where)->Limit($limits)->Order(array('id'=>'DESC'))->Select();
+			$items=$this->m_order->Where($where1)->Where($where)->Limit($limits)->Order(array('id'=>'DESC'))->Select();
 			
             if (empty($items)) {
                 $data = array('code'=>1002,'count'=>0,'data'=>array(),'msg'=>'无数据');
@@ -102,8 +117,15 @@ class OrderController extends AdminBasicController
 		$csrf_token = $this->getPost('csrf_token', false);
         if (FALSE != $id AND is_numeric($id) AND $id > 0) {
 			if ($this->VerifyCsrfToken($csrf_token)) {
-				$delete = $this->m_order->Where(array('status'=>0))->UpdateByID(array('status'=>-1),$id);
-				$data = array('code' => 1, 'msg' => '删除成功', 'data' => '');
+				$where1 = array('id'=>$id);
+				$where = 'status=0 or status=2';//已完成和未支付的才可以删
+				$delete = $this->m_order->Where($where1)->Where($where)->Update(array('isdelete'=>1));
+				if($delete){
+					$data = array('code' => 1, 'msg' => '删除成功', 'data' => '');
+				}else{
+					$data = array('code' => 1003, 'msg' => '删除失败', 'data' => '');
+				}
+				
 			} else {
                 $data = array('code' => 1002, 'msg' => '页面超时，请刷新页面后重试!');
             }
@@ -220,14 +242,20 @@ class OrderController extends AdminBasicController
 						//业务处理
 						$update = $this->m_order->Where(array('id'=>$id))->Where('status=1 or status=3')->Update(array('status'=>2,'kami'=>$kami));
 						if($update){
-						$m = array();
+							$m = array();
 							//3.1.4.1通知用户,定时任务去执行
-							$content = '用户:' . $order['email'] . ',购买的商品['.$order['productname'].'],卡密是:'.$kami;
-							$m[]=array('email'=>$order['email'],'subject'=>'商品购买成功','content'=>$content,'addtime'=>time(),'status'=>0);
+							if(isEmail($order['email'])){
+								$content = '用户:' . $order['email'] . ',购买的商品['.$order['productname'].'],卡密是:'.$kami;
+								$m[]=array('email'=>$order['email'],'subject'=>'商品购买成功','content'=>$content,'addtime'=>time(),'status'=>0);
+							}
 							//3.1.4.2通知管理员,定时任务去执行
-							$content = '用户:' . $order['email'] . ',购买的商品['.$order['productname'].'],卡密发送成功';
-							$m[]=array('email'=>$this->config['admin_email'],'subject'=>'用户购买商品','content'=>$content,'addtime'=>time(),'status'=>0);
-							$this->m_email_queue->MultiInsert($m);
+							if(isEmail($this->config['admin_email'])){
+								$content = '用户:' . $order['email'] . ',购买的商品['.$order['productname'].'],卡密发送成功';
+								$m[]=array('email'=>$this->config['admin_email'],'subject'=>'用户购买商品','content'=>$content,'addtime'=>time(),'status'=>0);
+							}
+							if(!empty($m)){
+								$this->m_email_queue->MultiInsert($m);
+							}
 							$data = array('code' => 1, 'msg' => '订单已处理', 'data' => '');
 						}else{
 							$data = array('code' => 1004, 'msg' => '处理失败', 'data' => '');
@@ -245,5 +273,23 @@ class OrderController extends AdminBasicController
             $data = array('code' => 1000, 'msg' => '缺少字段', 'data' => '');
         }
        Helper::response($data);
+    }
+	
+    private function conditionSQL($param)
+    {
+        $condition = "1";
+        if (isset($param['orderid']) AND empty($param['orderid']) === FALSE) {
+            $condition .= " AND `orderid` LIKE '%{$param['orderid']}%'";
+        }
+        if (isset($param['email']) AND empty($param['email']) === FALSE) {
+            $condition .= " AND `email` LIKE '%{$param['email']}%'";
+        }
+        if (isset($param['status']) AND $param['status']>-1 ) {
+            $condition .= " AND `status` = {$param['status']}";
+        }
+        if (isset($param['pid']) AND empty($param['pid']) === FALSE AND $param['pid']>0 ) {
+            $condition .= " AND `pid` = {$param['pid']}";
+        }		
+        return ltrim($condition, " AND ");
     }
 }

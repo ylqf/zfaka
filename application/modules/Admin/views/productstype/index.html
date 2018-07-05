@@ -10,7 +10,7 @@
             <div class="layui-tab-content" style="padding: 20px 0;">
                 <div class="layui-form layui-form-pane layui-tab-item layui-show">
                     <div class="layui-form-item layui-show">
-                        <table class="layui-table" id="productstype"></table>
+                        <table class="layui-table" id="table" lay-filter="table"></table>
                     </div>
                 </div>
             </div>
@@ -19,6 +19,9 @@
 </div>
 <script type="text/html" id="opt">
     <a class="layui-btn layui-btn-warm layui-btn-xs" href="/admin/productstype/edit/?id={{d.id}}">编辑</a>
+	 {{# if(d.active ==0){ }}
+	<a data-href="/admin/productstype/delete/?id={{d.id}}" class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+	 {{# } }}
 </script>
 <script type="text/html" id="active">
     {{# if(d.active >0){ }}

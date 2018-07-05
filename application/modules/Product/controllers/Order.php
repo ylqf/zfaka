@@ -51,7 +51,7 @@ class OrderController extends PcBasicController
 					$endtime = strtotime(date("Y-m-d 23:59:59"));
 					//进行同一ip，下单未付款的处理判断
 					if(isset($this->config['limit_ip_order']) AND $this->config['limit_ip_order']>0){
-						$total = $this->m_order->Where(array('ip'=>$myip,'status'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
+						$total = $this->m_order->Where(array('ip'=>$myip,'status'=>0,'isdelete'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 						if($total>$this->config['limit_ip_order']){
 							$data = array('code' => 1005, 'msg' => '处理失败,您有太多未付款订单了');
 							Helper::response($data);
@@ -60,7 +60,7 @@ class OrderController extends PcBasicController
 
 					//进行同一email，下单未付款的处理判断
 					if(isset($this->config['limit_email_order']) AND $this->config['limit_email_order']>0){
-						$total = $this->m_order->Where(array('email'=>$email,'status'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
+						$total = $this->m_order->Where(array('email'=>$email,'status'=>0,'isdelete'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 						if($total>$this->config['limit_email_order']){
 							$data = array('code' => 1006, 'msg' => '处理失败,您有太多未付款订单了');
 							Helper::response($data);
@@ -68,7 +68,7 @@ class OrderController extends PcBasicController
 					}
 					
 					//进行同一商品，禁止重复下单的判断
-					$total = $this->m_order->Where(array('email'=>$email,'status'=>0,'pid'=>$pid))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
+					$total = $this->m_order->Where(array('email'=>$email,'status'=>0,'pid'=>$pid,'isdelete'=>0))->Where("addtime>={$starttime} and addtime<={$endtime}")->Total();
 					if($total>0){
 						$data = array('code' => 1007, 'msg' => '处理失败,商品限制重复下单,请直接查询订单进行支付');
 						Helper::response($data);
@@ -129,7 +129,7 @@ class OrderController extends PcBasicController
 		$oid = $this->get('oid',false);
 		$oid = (int)base64_decode($oid);
 		if(is_numeric($oid) AND $oid>0){
-			$order = $this->m_order->Where(array('id'=>$oid))->SelectOne();
+			$order = $this->m_order->Where(array('id'=>$oid,'isdelete'=>0))->SelectOne();
 			if(!empty($order)){
 				//获取支付方式
 				$payments = $this->m_payment->getConfig();
@@ -159,15 +159,33 @@ class OrderController extends PcBasicController
 				$payconfig = $payments[$paymethod];
 				if($payconfig['active']>0){
 					//获取订单信息
-					$order = $this->m_order->Where(array('id'=>$oid))->SelectOne();
+					$order = $this->m_order->Where(array('id'=>$oid,'isdelete'=>0))->SelectOne();
 					if(is_array($order) AND !empty($order)){
 						if($order['status']>0){
 							$data = array('code' => 1004, 'msg' => '订单已支付成功');
 						}else{
 							try{
+								//这里对有订单超时处理的支付渠道进行特别处理
+								if($payconfig['overtime']>0){
+									if(($order['addtime']+$payconfig['overtime'])<time()){
+										//需要重新生成订单再提交
+										//生成orderid
+										$new_orderid = 'zlkb' . date('Y') . date('m') . date('d') . date('H') . date('i') . date('s') . mt_rand(10000, 99999);
+										$u = $this->m_order->UpdateByID(array('orderid'=>$new_orderid),$oid);
+										if($u){
+											$orderid = $new_orderid;
+										}else{
+											$data = array('code' => 1006, 'msg' =>"订单超时关闭");
+										}
+									}else{
+										$orderid = $order['orderid'];
+									}
+								}else{
+									$orderid = $order['orderid'];
+								}
 								$payclass = "\\Pay\\".$paymethod."\\".$paymethod;
 								$PAY = new $payclass();
-								$params =array('orderid'=>$order['orderid'],'money'=>$order['money'],'productname'=>$order['productname'],'web_url'=>$this->config['web_url']);
+								$params =array('orderid'=>$orderid,'money'=>$order['money'],'productname'=>$order['productname'],'web_url'=>$this->config['web_url']);
 								$data = $PAY->pay($payconfig,$params);
 							} catch (\Exception $e) {
 								$data = array('code' => 1005, 'msg' => $e->errorMessage());
@@ -191,13 +209,28 @@ class OrderController extends PcBasicController
 	//支付宝当面付生成二维码
 	public function showqrAction()
 	{
-		$url = $this->get('url');
-		if($url){
-			\PHPQRCode\QRcode::png($url);
-			exit();
-		}else{
-			echo '';
-			exit();
-		}
+        //增加安全判断
+        if(isset($_SERVER['HTTP_REFERER'])){
+			$referer_url = parse_url($_SERVER['HTTP_REFERER']);
+			$web_url = parse_url($this->config['web_url']);
+			if($referer_url['host']!=$web_url['host']){
+				echo 'fuck you!';exit();
+			}else{
+				$url = $this->get('url');
+				try{
+					if($url){
+						\PHPQRCode\QRcode::png($url);
+						exit();
+					}else{
+						echo '参数丢失';
+						exit();
+					}
+				} catch (\Exception $e) {
+					echo $e->errorMessage();exit();
+				}
+			}
+        }else{
+            echo 'fuck you!';exit();
+        }
 	}
 }

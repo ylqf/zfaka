@@ -5,10 +5,12 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 	var form = layui.form;
 	var layedit = layui.layedit;
 	
-	var edit_description=layedit.build('description'); //建立编辑器
+	var edit_description=layedit.build('description',{
+		tool: ['strong','italic','underline','|','del','left','center','right','link','unlink','face']
+	});	 //建立编辑器
 		
 	table.render({
-		elem: '#products',
+		elem: '#table',
 		url: '/admin/products/ajax',
 		page: true,
 		cellMinWidth:60,
@@ -20,14 +22,14 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 			{field: 'qty', title: '数量', width:80, templet: '#qty',align:'center'},
 			{field: 'auto', title: '发货模式', width:100, templet: '#auto',align:'center'},
 			{field: 'active', title: '是否销售', width:100, templet: '#active',align:'center'},
-			{field: 'opt', title: '操作', width:100, templet: '#opt',align:'center'},
+			{field: 'opt', title: '操作', width:160, templet: '#opt',align:'center'},
 		]]
 	});
   
   
   
 	//更新库存
-	$("#products_table").on("click","#updateQty",function(event){
+	$("#products_form").on("click","#updateQty",function(event){
 		event.preventDefault();
 		var pid = $("#pid").val();
 		$(this).attr({"disabled":"disabled"});
@@ -61,7 +63,7 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 	form.on('submit(edit)', function(data){
 		layedit.sync(edit_description);
 		data.field.csrf_token = TOKEN;
-		data.field.description = layedit.getText(edit_description);
+		data.field.description = layedit.getContent(edit_description);
 		var i = layer.load(2,{shade: [0.5,'#fff']});
 		$.ajax({
 			url: '/admin/products/editajax',
@@ -95,5 +97,13 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 
 		return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
 	});
+	
+    form.on('submit(search)', function(data){
+        table.reload('table', {
+            url: '/admin/products/ajax',
+            where: data.field
+        });
+        return false;
+    });
 	exports('adminproducts',null)
 });

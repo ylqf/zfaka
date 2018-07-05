@@ -11,6 +11,7 @@ class ProductsController extends AdminBasicController
 	private $m_products;
 	private $m_products_type;
 	private $m_products_card;
+	
     public function init()
     {
         parent::init();
@@ -38,13 +39,13 @@ class ProductsController extends AdminBasicController
 			Helper::response($data);
         }
 		
-		$where = array();
-		
 		$page = $this->get('page');
 		$page = is_numeric($page) ? $page : 1;
 		
 		$limit = $this->get('limit');
 		$limit = is_numeric($limit) ? $limit : 10;
+		
+		$where = array('isdelete'=>0);
 		
 		$total=$this->m_products->Where($where)->Total();
 		
@@ -56,7 +57,7 @@ class ProductsController extends AdminBasicController
             }
 			
             $limits = "{$pagenum},{$limit}";
-			$sql = "SELECT p1.id,p1.name,p1.price,p1.qty,p1.auto,p1.active,p1.stockcontrol,p2.name as typename FROM `t_products` as p1 left join `t_products_type` as p2 on p1.typeid = p2.id Order by p1.id desc LIMIT {$limits}";
+			$sql = "SELECT p1.id,p1.name,p1.price,p1.qty,p1.auto,p1.active,p1.stockcontrol,p2.name as typename FROM `t_products` as p1 left join `t_products_type` as p2 on p1.typeid = p2.id WHERE p1.isdelete=0 Order by p1.id desc LIMIT {$limits}";
 			$items=$this->m_products->Query($sql);
             if (empty($items)) {
                 $data = array('code'=>1002,'count'=>0,'data'=>array(),'msg'=>'无数据');
@@ -81,7 +82,7 @@ class ProductsController extends AdminBasicController
 			$product=$this->m_products->SelectByID('',$id);
 			$data['product'] = $product;
 			
-			$productstype=$this->m_products_type->Order(array('id'=>'DESC'))->Select();
+			$productstype=$this->m_products_type->Where(array('isdelete'=>0))->Order(array('id'=>'DESC'))->Select();
 			$data['productstype'] = $productstype;
 			
 			$this->getView()->assign($data);
@@ -99,7 +100,7 @@ class ProductsController extends AdminBasicController
         }
 
 		$data = array();
-		$productstype=$this->m_products_type->Order(array('id'=>'DESC'))->Select();
+		$productstype=$this->m_products_type->Where(array('isdelete'=>0))->Order(array('id'=>'DESC'))->Select();
 		$data['productstype'] = $productstype;
 		$this->getView()->assign($data);
     }
@@ -130,7 +131,7 @@ class ProductsController extends AdminBasicController
 				$m=array(
 					'typeid'=>$typeid,
 					'name'=>$name,
-					'description'=>html_entity_decode($description),
+					'description'=>htmlspecialchars($description),
 					'stockcontrol'=>$stockcontrol,
 					'qty'=>$qty,
 					'price'=>$price,
@@ -193,7 +194,7 @@ class ProductsController extends AdminBasicController
 		if($pid AND $csrf_token){
 			if ($this->VerifyCsrfToken($csrf_token)) {
 				//修正库存问题,在添加新商品时,如果是自动发货商品,库存默认为0
-				$qty = $this->m_products_card->Where(array('pid'=>$pid,'active'=>0))->Total();
+				$qty = $this->m_products_card->Where(array('pid'=>$pid,'active'=>0,'isdelete'=>0))->Total();
 				$qty_m = array('qty' => $qty);
 				$u = $this->m_products->Where(array('id'=>$pid,'auto'=>1,'stockcontrol'=>1))->Update($qty_m);
 				if($u){
@@ -209,4 +210,36 @@ class ProductsController extends AdminBasicController
 		}
 		Helper::response($data);
 	}
+	
+    public function deleteAction()
+    {
+        if ($this->AdminUser==FALSE AND empty($this->AdminUser)) {
+            $data = array('code' => 1000, 'msg' => '请登录');
+			Helper::response($data);
+        }
+		$id = $this->get('id');
+		$csrf_token = $this->getPost('csrf_token', false);
+        if (FALSE != $id AND is_numeric($id) AND $id > 0) {
+			if ($this->VerifyCsrfToken($csrf_token)) {
+				//检查是否存在可用的卡密
+				$qty = $this->m_products_card->Where(array('pid'=>$id,'active'=>0,'isdelete'=>0))->Total();
+				if($qty>0){
+					$data = array('code' => 1004, 'msg' => '存在可用卡密，请导出', 'data' => '');
+				}else{
+					$where = 'active=0';//只有未激活的才可以删除
+					$delete = $this->m_products->Where($where)->UpdateByID(array('isdelete'=>1),$id);
+					if($delete){
+						$data = array('code' => 1, 'msg' => '删除成功', 'data' => '');
+					}else{
+						$data = array('code' => 1003, 'msg' => '删除失败', 'data' => '');
+					}
+				}
+			} else {
+                $data = array('code' => 1002, 'msg' => '页面超时，请刷新页面后重试!');
+            }
+        } else {
+            $data = array('code' => 1001, 'msg' => '缺少字段', 'data' => '');
+        }
+       Helper::response($data);
+    }
 }

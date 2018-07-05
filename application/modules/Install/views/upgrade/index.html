@@ -13,7 +13,9 @@
 					  <legend>本次更新内容：</legend>
 					</fieldset>
 					<blockquote class="layui-elem-quote layui-quote-nm">
-						<?php echo $upgrade_desc;?>
+						<p>当前版本：<?php echo $version;?></p>
+						<p>升级版本：<?php echo $update_version;?></p>
+						<p><?php echo $upgrade_desc;?></p>
 					</blockquote>
 					
 					<pre class="layui-code layui-box layui-code-view"><?php echo $upgrade_sql;?></pre>
