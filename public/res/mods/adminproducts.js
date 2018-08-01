@@ -11,7 +11,7 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 		
 	table.render({
 		elem: '#table',
-		url: '/admin/products/ajax',
+		url: '/'+ADMIN_DIR+'/products/ajax',
 		page: true,
 		cellMinWidth:60,
 		cols: [[
@@ -19,15 +19,24 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 			{field: 'typename', title: '商品类型'},
 			{field: 'name', title: '商品名称'},
 			{field: 'price', title: '单价'},
-			{field: 'qty', title: '数量', width:80, templet: '#qty',align:'center'},
+			{field: 'qty', title: '库存', width:80, templet: '#qty',align:'center'},
 			{field: 'auto', title: '发货模式', width:100, templet: '#auto',align:'center'},
 			{field: 'active', title: '是否销售', width:100, templet: '#active',align:'center'},
 			{field: 'opt', title: '操作', width:160, templet: '#opt',align:'center'},
 		]]
 	});
-  
-  
-  
+
+	form.on('radio(stockcontrol)', function(data){
+		if(data.value=='1'){
+			//$('#qty').val('0');
+			var qty = $("#qty").attr("oldqty");
+			$('#qty').val(qty);
+			$("#qty").removeAttr("disabled");
+		}else{
+			$('#qty').val('0');
+			$("#qty").attr("disabled","true");
+		}
+	});  
 	//更新库存
 	$("#products_form").on("click","#updateQty",function(event){
 		event.preventDefault();
@@ -36,7 +45,7 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
         $.ajax({
             type: "POST",
             dataType: "json",
-            url: "/admin/products/updateqtyajax",
+            url: '/'+ADMIN_DIR+'/products/updateqtyajax',
             data: { "csrf_token": TOKEN,'pid':pid},
             success: function(res) {
                 if (res.code == 1) {
@@ -66,7 +75,7 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 		data.field.description = layedit.getContent(edit_description);
 		var i = layer.load(2,{shade: [0.5,'#fff']});
 		$.ajax({
-			url: '/admin/products/editajax',
+			url: '/'+ADMIN_DIR+'/products/editajax',
 			type: 'POST',
 			dataType: 'json',
 			data: data.field,
@@ -100,7 +109,7 @@ layui.define(['layer', 'table', 'form','layedit'], function(exports){
 	
     form.on('submit(search)', function(data){
         table.reload('table', {
-            url: '/admin/products/ajax',
+            url: '/'+ADMIN_DIR+'/products/ajax',
             where: data.field
         });
         return false;

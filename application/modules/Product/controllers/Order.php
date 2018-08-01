@@ -25,7 +25,7 @@ class OrderController extends PcBasicController
     public function buyAction()
     {
 		//下订单
-		$pid = ceil($this->getPost('productlist'));
+		$pid = ceil($this->getPost('pid'));
 		$number = ceil($this->getPost('number'));
 		$email = $this->getPost('email');
 		$chapwd = $this->getPost('chapwd');
@@ -33,7 +33,7 @@ class OrderController extends PcBasicController
 		
 		if(is_numeric($pid) AND $pid>0 AND is_numeric($number) AND $number>0 AND $email AND isEmail($email) AND $chapwd AND $csrf_token){
 			if ($this->VerifyCsrfToken($csrf_token)) {
-				$product = $this->m_products->Where(array('id'=>$pid))->SelectOne();
+				$product = $this->m_products->Where(array('id'=>$pid,'active'=>1,'isdelete'=>0))->SelectOne();
 				if(!empty($product)){
 					$myip = getClientIP();
 					
@@ -127,17 +127,34 @@ class OrderController extends PcBasicController
 	{
 		$data = array();
 		$oid = $this->get('oid',false);
-		$oid = (int)base64_decode($oid);
-		if(is_numeric($oid) AND $oid>0){
-			$order = $this->m_order->Where(array('id'=>$oid,'isdelete'=>0))->SelectOne();
-			if(!empty($order)){
-				//获取支付方式
-				$payments = $this->m_payment->getConfig();
-				$data['order']=$order;
-				$data['payments']=$payments;
-				$data['code']=1;
+		$ooid = $this->get('ooid',false);
+		$id = 0;
+		if($oid OR $ooid){
+			if($oid){
+				$oid = (int)base64_decode($oid);
+				if(is_numeric($oid) AND $oid>0){
+					$id = $oid;
+				}
 			}else{
-				$data['code']=1002;
+				if(is_numeric($ooid) AND $ooid>0){
+					$id = $ooid;
+				}
+			}
+			
+			if($id>0){
+				$order = $this->m_order->Where(array('id'=>$id,'isdelete'=>0))->SelectOne();
+				if(!empty($order)){
+					//获取支付方式
+					$payments = $this->m_payment->getConfig();
+					$data['order']=$order;
+					$data['payments']=$payments;
+					$data['code']=1;
+				}else{
+					$data['code']=1002;
+					$data['msg']='订单不存在';
+				}
+			}else{
+				$data['code']=1001;
 				$data['msg']='订单不存在';
 			}
 		}else{
@@ -176,6 +193,7 @@ class OrderController extends PcBasicController
 											$orderid = $new_orderid;
 										}else{
 											$data = array('code' => 1006, 'msg' =>"订单超时关闭");
+											Helper::response($data);
 										}
 									}else{
 										$orderid = $order['orderid'];
@@ -188,7 +206,7 @@ class OrderController extends PcBasicController
 								$params =array('orderid'=>$orderid,'money'=>$order['money'],'productname'=>$order['productname'],'web_url'=>$this->config['web_url']);
 								$data = $PAY->pay($payconfig,$params);
 							} catch (\Exception $e) {
-								$data = array('code' => 1005, 'msg' => $e->errorMessage());
+								$data = array('code' => 1005, 'msg' => $e->getMessage());
 							}
 						}
 					}else{
@@ -209,28 +227,26 @@ class OrderController extends PcBasicController
 	//支付宝当面付生成二维码
 	public function showqrAction()
 	{
-        //增加安全判断
-        if(isset($_SERVER['HTTP_REFERER'])){
-			$referer_url = parse_url($_SERVER['HTTP_REFERER']);
-			$web_url = parse_url($this->config['web_url']);
-			if($referer_url['host']!=$web_url['host']){
-				echo 'fuck you!';exit();
-			}else{
-				$url = $this->get('url');
-				try{
-					if($url){
-						\PHPQRCode\QRcode::png($url);
-						exit();
-					}else{
-						echo '参数丢失';
-						exit();
-					}
-				} catch (\Exception $e) {
-					echo $e->errorMessage();exit();
+        $url = $this->get('url',true);
+		if($url){
+			//增加安全判断
+			if(isset($_SERVER['HTTP_REFERER'])){
+				$referer_url = parse_url($_SERVER['HTTP_REFERER']);
+				$web_url = parse_url($this->config['web_url']);
+				if($referer_url['host']!=$web_url['host']){
+					echo 'fuck you!';exit();
 				}
 			}
-        }else{
-            echo 'fuck you!';exit();
-        }
+			try{
+				\PHPQRCode\QRcode::png($url);
+				exit();
+			} catch (\Exception $e) {
+				echo $e->getMessage();
+				exit();
+			}
+		}else{
+			echo '参数丢失';
+			exit();
+		}
 	}
 }

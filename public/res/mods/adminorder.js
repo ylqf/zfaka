@@ -7,17 +7,18 @@ layui.define(['layer', 'table', 'form'], function(exports){
 
 	table.render({
 		elem: '#table',
-		url: '/admin/order/ajax',
+		url: '/'+ADMIN_DIR+'/order/ajax',
 		page: true,
 		cellMinWidth:60,
 		cols: [[
 			{field: 'id', title: 'ID', width:80},
-			{field: 'orderid', title: '订单号', minWidth:160},
-			{field: 'email', title: '邮箱', minWidth:160},
-			{field: 'productname', title: '商品', minWidth:160},
-			{field: 'number', title: '数量',width:80},
+			{field: 'orderid', title: '订单号', minWidth:100},
+			{field: 'email', title: '邮箱', minWidth:120},
+			{field: 'productname', title: '商品', minWidth:100},
+			{field: 'addtime', title: '时间', templet: '#addtime',minWidth:120},
 			{field: 'status', title: '状态', width:80, templet: '#status',align:'center'},
 			{field: 'paymoney', title: '支付金额',width:80},
+			{field: 'number', title: '数量',width:80},
 			{field: 'opt', title: '操作', templet: '#opt',align:'center',fixed: 'right', width: 160,},
 		]]
 	});
@@ -26,7 +27,7 @@ layui.define(['layer', 'table', 'form'], function(exports){
 		data.field.csrf_token = TOKEN;
 		var i = layer.load(2,{shade: [0.5,'#fff']});
 		$.ajax({
-			url: '/admin/order/payajax/',
+			url: '/'+ADMIN_DIR+'/order/payajax/',
 			type: 'POST',
 			dataType: 'json',
 			data: data.field,
@@ -38,7 +39,7 @@ layui.define(['layer', 'table', 'form'], function(exports){
 					content: '确认支付成功',
 					btn: ['确定'],
 					yes: function(index, layero){
-					    location.href = '/admin/order/view/?id='+data.field.id;
+					    location.href = '/'+ADMIN_DIR+'/order/view/?id='+data.field.id;
 					},
 					cancel: function(){ 
 					    location.reload();
@@ -62,7 +63,7 @@ layui.define(['layer', 'table', 'form'], function(exports){
 		data.field.csrf_token = TOKEN;
 		var i = layer.load(2,{shade: [0.5,'#fff']});
 		$.ajax({
-			url: '/admin/order/sendajax/',
+			url: '/'+ADMIN_DIR+'/order/sendajax/',
 			type: 'POST',
 			dataType: 'json',
 			data: data.field,
@@ -74,7 +75,7 @@ layui.define(['layer', 'table', 'form'], function(exports){
 					content: '手工发货成功',
 					btn: ['确定'],
 					yes: function(index, layero){
-					    location.href = '/admin/order/view/?id='+data.field.id;
+					    location.href = '/'+ADMIN_DIR+'/order/view/?id='+data.field.id;
 					},
 					cancel: function(){ 
 					    location.reload();
@@ -96,7 +97,7 @@ layui.define(['layer', 'table', 'form'], function(exports){
 	
     form.on('submit(search)', function(data){
         table.reload('table', {
-            url: '/admin/order/ajax',
+            url: '/'+ADMIN_DIR+'/order/ajax',
             where: data.field
         });
         return false;

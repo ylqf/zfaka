@@ -23,7 +23,7 @@ class ProductsController extends AdminBasicController
     public function indexAction()
     {
         if ($this->AdminUser==FALSE AND empty($this->AdminUser)) {
-            $this->redirect("/admin/login");
+            $this->redirect('/'.ADMIN_DIR."/login");
             return FALSE;
         }
 
@@ -73,7 +73,7 @@ class ProductsController extends AdminBasicController
     public function editAction()
     {
         if ($this->AdminUser==FALSE AND empty($this->AdminUser)) {
-            $this->redirect("/admin/login");
+            $this->redirect('/'.ADMIN_DIR."/login");
             return FALSE;
         }
 		$id = $this->get('id');
@@ -87,7 +87,7 @@ class ProductsController extends AdminBasicController
 			
 			$this->getView()->assign($data);
 		}else{
-            $this->redirect("/admin/products");
+            $this->redirect('/'.ADMIN_DIR."/products");
             return FALSE;
 		}
     }
@@ -95,7 +95,7 @@ class ProductsController extends AdminBasicController
     public function addAction()
     {
         if ($this->AdminUser==FALSE AND empty($this->AdminUser)) {
-            $this->redirect("/admin/login");
+            $this->redirect('/'.ADMIN_DIR."/login");
             return FALSE;
         }
 
@@ -128,6 +128,7 @@ class ProductsController extends AdminBasicController
 		
 		if($method AND $typeid AND $name AND $description AND is_numeric($stockcontrol) AND is_numeric($qty) AND is_numeric($price) AND is_numeric($auto) AND is_numeric($active) AND is_numeric($sort_num) AND $csrf_token){
 			if ($this->VerifyCsrfToken($csrf_token)) {
+				$description = str_replace(array("\r","\n","\t"), "", $description);
 				$m=array(
 					'typeid'=>$typeid,
 					'name'=>$name,

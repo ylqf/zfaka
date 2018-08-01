@@ -3,14 +3,41 @@
 	var layer = layui.layer;
 	var form = layui.form;
 
+	form.verify({
+		numberCheck: function(value, item){ //value：表单的值、item：表单的DOM对象
+			var qty = $('#qty').val();
+			var number = $('#number').val();
+			var stockcontrol = $('#stockcontrol').val();
+			if(stockcontrol>0){
+				if(parseInt(number) > parseInt(qty)){
+					return '下单数量超限';
+				}
+			}
+		}
+	});	
+	
     function htmlspecialchars_decode(str){
-		str = str.replace(/&amp;/g, '&');
-        str = str.replace(/&lt;/g, '<');
-		str = str.replace(/&gt;/g, '>');
-		str = str.replace(/&quot;/g, '"');
-        str = str.replace(/&#039;/g, "'");
+		if(str.length>0){
+			str = str.replace(/&amp;/g, '&');
+			str = str.replace(/&lt;/g, '<');
+			str = str.replace(/&gt;/g, '>');
+			str = str.replace(/&quot;/g, '"');
+			str = str.replace(/&#039;/g, "'");
+		}
         return str;  
     }
+	
+	function buyNumCheck(){
+		var qty = $('#qty').val();
+		var number = $('#number').val();
+		var stockcontrol = $('#stockcontrol').val();
+		if(stockcontrol>0){
+			if(parseInt(number) > parseInt(qty)){
+				return false;
+			}
+		}
+		return true;
+	}
 	
 	form.on('select(typeid)', function(data){
 		if (data.value == 0) return;
@@ -71,7 +98,7 @@
 						$('#qty').val("不限量");
 						$("#buy").removeAttr("disabled");
 					}
-					
+					$('#stockcontrol').val(product.stockcontrol);
 					if(product.auto>0){
 						var str = '<p><span class="layui-badge layui-bg-green">自动发货</span></p>';
 					}else{
@@ -93,32 +120,39 @@
 	form.on('submit(buy)', function(data){
 		data.field.csrf_token = TOKEN;
 		var i = layer.load(2,{shade: [0.5,'#fff']});
-		$.ajax({
-			url: '/product/order/buy/',
-			type: 'POST',
-			dataType: 'json',
-			data: data.field,
-		})
-		.done(function(res) {
-			if (res.code == '1') {
-				var oid = res.data.oid;
-				if(oid.length>0){
-					location.href = '/product/order/pay/?oid='+res.data.oid;
-				}else{
-					layer.msg("订单异常",{icon:2,time:5000});
+		
+		if(buyNumCheck()){
+			$.ajax({
+				url: '/product/order/buy/',
+				type: 'POST',
+				dataType: 'json',
+				data: data.field,
+			})
+			.done(function(res) {
+				if (res.code == '1') {
+					var oid = res.data.oid;
+					if(oid.length>0){
+						location.href = '/product/order/pay/?oid='+res.data.oid;
+					}else{
+						layer.msg("订单异常",{icon:2,time:5000});
+					}
+				} else {
+					layer.msg(res.msg,{icon:2,time:5000});
 				}
-			} else {
-				layer.msg(res.msg,{icon:2,time:5000});
-			}
-		})
-		.fail(function() {
-			layer.msg('服务器连接失败，请联系管理员',{icon:2,time:5000});
-		})
-		.always(function() {
-			layer.close(i);
-		});
+			})
+			.fail(function() {
+				layer.msg('服务器连接失败，请联系管理员',{icon:2,time:5000});
+			})
+			.always(function() {
+				layer.close(i);
+			});
 
-		return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+			return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+		}else{
+			layer.msg("下单数量超限",{icon:2,time:5000});
+			layer.close(i);
+		}
+		return false; 
 	});
 
 	//左右框高度
@@ -132,6 +166,12 @@
 		}
 	}
 
+	//对商品描述再做一次补充解密处理
+	/*var aName = window.location.pathname;
+	if (aName.indexOf('/product/detail') >-1) {
+		html = htmlspecialchars_decode($('#prodcut_description').text());
+		$('#prodcut_description').html(html);
+	}*/
 	autoHeight();
 	exports('product',null)
 });

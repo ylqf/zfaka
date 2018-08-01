@@ -39,10 +39,16 @@ class zfbf2f
 		];
 		try {
 			$qr = Charge::run(Config::ALI_CHANNEL_QR, $config, $data);
-			$result = array('paymethod'=>$this->paymethod,'qr'=>"/product/order/showqr/?url=".$qr,'payname'=>$payconfig['name'],'overtime'=>$payconfig['overtime']);
-			return array('code'=>1,'msg'=>'success','data'=>$result);
+			if($qr){
+				$result_params = array('paymethod'=>$this->paymethod,'qr'=>"/product/order/showqr/?url=".$qr,'payname'=>$payconfig['name'],'overtime'=>$payconfig['overtime']);
+				return array('code'=>1,'msg'=>'success','data'=>$result_params);
+			}else{
+				return array('code'=>1002,'msg'=>'当面付生成失败','data'=>'');
+			}
 		} catch (PayException $e) {
-			return array('code'=>1000,'msg'=>$e->errorMessage(),'data'=>'');
+			return array('code'=>1001,'msg'=>$e->errorMessage(),'data'=>'');
+		} catch (\Exception $e) {
+			return array('code'=>1000,'msg'=>$e->getMessage(),'data'=>'');
 		}
 	}
 	
@@ -51,13 +57,9 @@ class zfbf2f
 		try {
 			unset($_POST['paymethod']);
 			$callback = new \Pay\zfbf2f\callback();
-			$ret = Notify::run("ali_charge", $payconfig,$callback);// 处理回调，内部进行了签名检查
-			file_put_contents(YEWU_FILE, CUR_DATETIME.'-'.json_encode($ret).PHP_EOL, FILE_APPEND);
-			var_dump($ret);
-			exit();
+			return $ret = Notify::run("ali_charge", $payconfig,$callback);// 处理回调，内部进行了签名检查	
 		} catch (\Exception $e) {
-			file_put_contents(YEWU_FILE, CUR_DATETIME.'-'.$e->errorMessage().PHP_EOL, FILE_APPEND);
-			exit;
+			return 'error|Exception:'.$e->getMessage();
 		}
 	}
 	

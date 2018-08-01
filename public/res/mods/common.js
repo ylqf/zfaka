@@ -81,17 +81,37 @@ layui.define(['layer', 'laytpl', 'form', 'element','table'], function(exports){
 
 
   //手机设备的简单适配
-  var treeMobile = $('.site-tree-mobile')
-  ,shadeMobile = $('.site-mobile-shade')
+	var treeMobile = $('.site-tree-mobile')
+	,shadeMobile = $('.site-mobile-shade')
 
-  treeMobile.on('click', function(){
-    $('body').addClass('site-mobile');
-  });
+	treeMobile.on('click', function(){
+		$('body').addClass('site-mobile');
+		$('html,body').addClass('ovfHiden');
+	});
 
-  shadeMobile.on('click', function(){
-    $('body').removeClass('site-mobile');
-  });
-
+	shadeMobile.on('click', function(){
+		$('body').removeClass('site-mobile');
+		$('html,body').removeClass('ovfHiden');
+	});
+  
+	$('#main-menu-mobile-switch').on('click', function(){
+		if($("#main-menu-mobile").is(":hidden")){
+			$('body').addClass('main-menu-mobile_body');
+			$('html,body').addClass('ovfHiden');
+			var body_width = parseInt($('body').width());
+			$("#main-menu-mobile").css("width",body_width);
+			$('#main-menu-mobile').show();
+		}else{
+			$('body').removeClass('main-menu-mobile_body');
+			$('html,body').removeClass('ovfHiden');
+			$('#main-menu-mobile').hide();
+		}
+	});
+	$('.site-mobile-shade').on('click', function(){
+		$('body').removeClass('main-menu-mobile_body');
+		$('html,body').removeClass('ovfHiden');
+		$('#main-menu-mobile').hide();
+	});
  	//全局删除信息提示
 	table.on('tool(table)', function(obj) {
 		var layEvent = obj.event;
